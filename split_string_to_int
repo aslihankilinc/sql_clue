@@ -1,0 +1,12 @@
+declare @value varchar(500)='2, 3, 4, 5, 6, 7, 14, 15'
+declare @data xml
+declare @tbl table(id int)
+
+select @data = '<t>' + replace(@value, ', ', '</t><t>') + '</t>'
+insert into @tbl
+select
+ t.c.value('.', 'int') as id
+from 
+@data.nodes('t') as t(c)
+
+select * from @tbl
