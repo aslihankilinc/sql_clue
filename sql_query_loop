@@ -1,0 +1,12 @@
+DECLARE @col1 varchar(3),@col2 varchar(3),@col3 varchar(3)
+DECLARE loopName CURSOR FOR
+SELECT col1,col2,col3 from tableName group by col1,col2,col3
+OPEN loopName
+FETCH NEXT FROM loopName INTO @col1,@col2,@col3
+WHILE @@FETCH_STATUS =0
+BEGIN
+print @col1+''+@col2+''+@col3
+FETCH NEXT FROM loopName INTO @col1,@col2,@col3
+END
+CLOSE loopName
+DEALLOCATE loopName
