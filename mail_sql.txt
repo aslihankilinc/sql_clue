@@ -1,13 +1,13 @@
-USE [FILCPM_F19]
+USE [DBNAME]
 GO
-/****** Object:  StoredProcedure [dbo].[A_BDENEME_MAIL_ATOLYE]    Script Date: 03.02.2021 11:40:21 ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
 
---EXEC [A_BDENEME_MAIL_ATOLYE] 
+--EXEC [SEND_MAIL] 
 ALTER PROCEDURE [dbo].[SEND_MAIL]
 
 AS
@@ -78,7 +78,7 @@ BEGIN
                  <td class='t_info' style='text-align:center;width:50px;'>Name</th>
 			     <td class='t_info' style='text-align:center;width:50px;'>Phone</th>
 		</tr>
-		<XXROWLARXX>
+		<XXROWSXX>
 	</table>
 
 <br>
