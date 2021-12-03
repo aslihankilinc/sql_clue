@@ -1,0 +1,186 @@
+USE [FILCPM_F19]
+GO
+/****** Object:  StoredProcedure [dbo].[A_BDENEME_MAIL_ATOLYE]    Script Date: 03.02.2021 11:40:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+--EXEC [A_BDENEME_MAIL_ATOLYE] 
+ALTER PROCEDURE [dbo].[SEND_MAIL]
+
+AS
+BEGIN
+	SET NOCOUNT ON
+	
+	SET LANGUAGE TÜRKÇE
+	
+	DECLARE @SUBJECT VARCHAR(500)
+	DECLARE @BODYHTML NVARCHAR(MAX)
+	DECLARE @BODY NVARCHAR(MAX)
+	DECLARE @ROWLAR NVARCHAR(MAX)
+	DECLARE @ROW1 NVARCHAR(1000)
+	DECLARE @ROW2 NVARCHAR(1000)
+	DECLARE @ROW3 NVARCHAR(1000)
+	
+	DECLARE @COUNTER INT	
+	
+	DECLARE @MAIL_TO VARCHAR(100)
+	DECLARE @MAIL_TO_BCC VARCHAR(500)
+	
+	SET @BODYHTML = N'
+<!DOCTYPE html>
+<html>
+<head>
+<style> 
+        .t_info {
+                vertical-align: bottom;
+            width: 100px;
+                font-size: 12px;
+                font-family: Calibri;
+                font-weight: bold;
+                text-align: left;
+            margin: 0;
+            padding: 4px;
+                border-width: 1px 1px 0 0;
+                border-style: solid;
+                background-color:#B9BDBD;
+        }
+        .t_data {
+                vertical-align: bottom;
+                font-size: 12px;
+                font-family: Calibri;
+                font-weight: bold;
+            margin: 0;
+            padding: 4px;
+                border-width: 1px 1px 1px 0;
+                border-style: solid;
+            }
+		.t_data2 {
+                vertical-align: bottom;
+                font-size: 12px;
+                font-family: Calibri;
+                font-weight: bold;
+                text-align: left;                
+               background:#ced1d1;
+                margin: 0;
+                padding: 4px;
+                border-width: 1px 1px 1px 0;
+                border-style: solid;
+            }    
+    </style>
+</head>
+<body>
+    <table border='0' cellpadding='0' cellspacing='0'>     
+             <tr>
+                 <td class='t_info' style='text-align:center;width:30px;'>#</th>
+                 <td class='t_info' style='text-align:center;width:50px;'>Name</th>
+			     <td class='t_info' style='text-align:center;width:50px;'>Phone</th>
+		</tr>
+		<XXROWLARXX>
+	</table>
+
+<br>
+<br>
+<div style='font-size:14px;font-family:Calibri;font-weight:bold'>
+    Note : This is a information mail,You are not answer...
+</div>	
+</body>
+</html>
+'
+
+	SET @ROW1 = N'
+<tr>
+	<td class="t_data" style="text-align:center;vertical-align:middle;">XX1XX</td>
+	<td class="t_data" style="text-align:center;vertical-align:middle;">XX2XX</td>
+	<td class="t_data" style="text-align:center;vertical-align:middle;">XX3XX</td>
+</tr>'
+	SET @ROW2 = N'
+<tr class="alt">
+	<td class="t_data2" style="text-align:center;vertical-align:middle;">XX1XX</td>
+	<td class="t_data2" style="text-align:center;vertical-align:middle;">XX2XX</td>
+	<td class="t_data2" style="text-align:center;vertical-align:middle;">XX3XX</td>
+</tr>'
+
+	SET @BODY = ''
+	SET @COUNTER = 0
+	SET @ROWS = '' 
+	
+CREATE TABLE #user(Name VARCHAR(30),Phone VARCHAR(30))
+DECLARE @Name VARCHAR(30)
+DECLARE @Phone VARCHAR(30)
+
+insert into #user(Name,Phone)
+select 'Aslihan','00000000000'
+insert into #user(Name,Phone)
+select 'Tanay','00000000000'
+insert into #user(Name,Phone)
+select 'Enis','00000000000'
+insert into #user(Name,Phone)
+select 'Neslihan','00000000000'
+insert into #user(Name,Phone)
+select 'Alp','00000000000'
+
+
+	DECLARE USER_ITEMS CURSOR FOR		 
+			Select Name,Phone From #user    
+	OPEN USER_ITEMS
+	FETCH NEXT FROM USER_ITEMS INTO @Name,@Phone
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF @COUNTER % 2 = 0
+			SET @BODY = @ROW1
+		ELSE
+			SET @BODY = @ROW2
+			
+		SET @BODY = REPLACE(@BODY, 'XX1XX', @COUNTER)		
+		SET @BODY = REPLACE(@BODY, 'XX2XX',@Name)
+		SET @BODY = REPLACE(@BODY, 'XX3XX', @Phone)
+		
+		SET @ROWS = @ROWS + @BODY		
+		SET @COUNTER = @COUNTER + 1
+
+		FETCH NEXT FROM USER_ITEMS INTO @Name,@Phone
+	END
+	IF @COUNTER = 0
+	BEGIN
+		SET @BODY = @ROW1
+		SET @BODY = REPLACE(@BODY, 'XX1XX', '')		
+		SET @BODY = REPLACE(@BODY, 'XX2XX', '')
+		SET @BODY = REPLACE(@BODY, 'XX3XX', '')
+		
+		SET @ROWS = @ROWS + @BODY		
+	END
+
+
+
+	IF @ROWS <> ''
+	BEGIN
+		SET @BODY = REPLACE(@BODY, '<XXROWSXX>', @ROWS)
+	
+		 
+				SET @SUBJECT =  'User_List'  
+				SET @MAIL_TO = 'youtmailadress@gmail.com'  
+				SET @MAIL_TO_BCC = ''
+			END			
+
+		ELSE RETURN 
+		
+
+		EXECUTE msdb..sp_send_dbmail
+				@profile_name				= 'ASLIHAN KILINÇ',
+				@recipients					= @MAIL_TO,
+				@body						= @BODY,
+				@body_format				= 'HTML',
+				@subject					= @SUBJECT,
+  				@blind_copy_recipients		= @MAIL_TO_BCC
+				
+				
+	CLOSE USER_ITEMS
+		DEALLOCATE USER_ITEMS
+				DROP TABLE #user
+
+	END
+	
+
