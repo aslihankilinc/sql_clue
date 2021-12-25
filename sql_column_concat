@@ -1,0 +1,6 @@
+
+
+SELECT convert(varchar(3),column_name) + ', ' AS 'data()'
+FROM tablename 
+group column_name
+FOR XML PATH('')
