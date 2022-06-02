@@ -1,0 +1,186 @@
+--charnın ilk harfini büyük geri kalnını kucuk harfe  cevirir
+ALTER FUNCTION [dbo].[A_TAU_CHAR_BIG_SMALL] (
+@char NVARCHAR(MAX)  
+)  
+RETURNS NVARCHAR(MAX)  
+AS  
+BEGIN  
+	DECLARE @Entry NVARCHAR(MAX)  
+	DECLARE @Result NVARCHAR(MAX)  
+	DECLARE @Count INTEGER 
+	DECLARE @Length INTEGER 
+	SET @Entry = LTRIM(@char)
+	SET @Length=LEN(@Entry)
+	SET @Count=0
+ 
+	WHILE @Length>@Count
+	BEGIN
+		SET @Count=@Count+1
+		IF @Count=1
+		BEGIN
+			SET @Result=
+			CASE
+				WHEN SUBSTRING (@Entry,@Count,1)='ç' THEN  'Ç'
+				WHEN SUBSTRING (@Entry,@Count,1)='ğ' THEN  'Ğ'
+				WHEN SUBSTRING (@Entry,@Count,1)='ı' THEN  'I'
+				WHEN SUBSTRING (@Entry,@Count,1)='ö' THEN  'Ö'
+				WHEN SUBSTRING (@Entry,@Count,1)='ü' THEN  'Ü'
+				ELSE UPPER(SUBSTRING (@Entry,@Count,1))
+			END	
+			SET @Count=@Count+1
+		END 
+		IF SUBSTRING(@Entry,@Count,1)=' '
+		BEGIN
+			SET @Count=@Count+1
+			WHILE SUBSTRING(@Entry,@Count,1)=' '
+			BEGIN
+				SET @Count=@Count+1
+			END			
+			SET @Result=@Result+
+			CASE
+				WHEN SUBSTRING (@Entry,@Count,1)='ç' THEN  ' Ç'
+				WHEN SUBSTRING (@Entry,@Count,1)='ğ' THEN  ' Ğ'
+				WHEN SUBSTRING (@Entry,@Count,1)='ı' THEN  ' I'
+				WHEN SUBSTRING (@Entry,@Count,1)='ö' THEN  ' Ö'
+				WHEN SUBSTRING (@Entry,@Count,1)='ü' THEN  ' Ü'
+				ELSE ' ' +UPPER(SUBSTRING (@Entry,@Count,1))
+			END	
+		END
+		ELSE
+		BEGIN
+			SET @Result=@Result+LOWER(SUBSTRING (@Entry,@Count,1))
+		END						
+	END
+RETURN @Result
+END
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+ALTER PROCEDURE [dbo].[A_TAU_CREATETABLECLASS]
+	@TABLENAME		SYSNAME
+AS
+BEGIN
+DECLARE @RESULT VARCHAR(MAX) = 'public class ' + @TABLENAME + '
+{'
+
+SELECT @RESULT = @RESULT + '
+    public ' + LOWER(COLUMNTYPE) + NULLABLESIGN + ' ' + dbo.A_TAU_CHAR_BIG_SMALL(COLUMNNAME) + ' { get; set; }
+'
+FROM
+(
+    SELECT 
+        REPLACE(COL.NAME, ' ', '_') COLUMNNAME,
+        COLUMN_ID COLUMNID,        CASE TYP.NAME 
+            WHEN 'BIGINT' THEN 'LONG'
+            WHEN 'BINARY' THEN 'BYTE[]'
+            WHEN 'BIT' THEN 'BOOL'
+            WHEN 'CHAR' THEN 'STRING'
+            WHEN 'DATE' THEN 'DATETIME'
+            WHEN 'DATETIME' THEN 'DATETIME'
+            WHEN 'DATETIME2' THEN 'DATETIME'
+            WHEN 'DATETIMEOFFSET' THEN 'DATETIMEOFFSET'
+            WHEN 'DECIMAL' THEN 'DECIMAL'
+            WHEN 'FLOAT' THEN 'FLOAT'
+            WHEN 'IMAGE' THEN 'BYTE[]'
+            WHEN 'INT' THEN 'INT'
+            WHEN 'MONEY' THEN 'DECIMAL'
+            WHEN 'NCHAR' THEN 'CHAR'
+            WHEN 'NTEXT' THEN 'STRING'
+            WHEN 'NUMERIC' THEN 'DECIMAL'
+            WHEN 'NVARCHAR' THEN 'STRING'
+            WHEN 'REAL' THEN 'DOUBLE'
+            WHEN 'SMALLDATETIME' THEN 'DATETIME'
+            WHEN 'SMALLINT' THEN 'SHORT'
+            WHEN 'SMALLMONEY' THEN 'DECIMAL'
+            WHEN 'TEXT' THEN 'STRING'
+            WHEN 'TIME' THEN 'TIMESPAN'
+            WHEN 'TIMESTAMP' THEN 'DATETIME'
+            WHEN 'TINYINT' THEN 'BYTE'
+            WHEN 'UNIQUEIDENTIFIER' THEN 'GUID'
+            WHEN 'VARBINARY' THEN 'BYTE[]'
+            WHEN 'VARCHAR' THEN 'STRING'
+            ELSE TYP.NAME
+        END COLUMNTYPE,
+        CASE 
+            WHEN COL.IS_NULLABLE = 1 AND TYP.NAME IN ('STRING','BIGINT', 'BIT', 'DATE', 'DATETIME', 'DATETIME2', 'DATETIMEOFFSET', 'DECIMAL', 'FLOAT', 'INT', 'MONEY', 'NUMERIC', 'REAL', 'SMALLDATETIME', 'SMALLINT', 'SMALLMONEY', 'TIME', 'TINYINT', 'UNIQUEIDENTIFIER') 
+            THEN '?' 
+            ELSE '' 
+        END NULLABLESIGN
+    FROM SYS.COLUMNS COL
+        JOIN SYS.TYPES TYP ON
+            COL.SYSTEM_TYPE_ID = TYP.SYSTEM_TYPE_ID AND COL.USER_TYPE_ID = TYP.USER_TYPE_ID
+    WHERE OBJECT_ID = OBJECT_ID(@TABLENAME)
+) T
+ORDER BY COLUMNID
+
+SET @RESULT =  @RESULT+ '
+}'
+
+PRINT @RESULT
+END
+
+|\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/|
+ALTER PROCEDURE [dbo].[spCreateObjectTableClass]
+	@TableName		sysname
+AS
+BEGIN
+declare @Result varchar(max) = ' [DataContract]'+ 'public class ' + @TableName + '
+{'
+
+select @Result = @Result + '
+   [DataMember] public ' + ColumnType + NullableSign + ' ' + ColumnName + ' { get; set; }
+'
+from
+(
+    select 
+        replace(col.name, ' ', '_') ColumnName,
+        column_id ColumnId,
+        case typ.name 
+            when 'bigint' then 'long'
+            when 'binary' then 'byte[]'
+            when 'bit' then 'bool'
+            when 'char' then 'string'
+            when 'date' then 'DateTime'
+            when 'datetime' then 'DateTime'
+            when 'datetime2' then 'DateTime'
+            when 'datetimeoffset' then 'DateTimeOffset'
+            when 'decimal' then 'decimal'
+            when 'float' then 'float'
+            when 'image' then 'byte[]'
+            when 'int' then 'int'
+            when 'money' then 'decimal'
+            when 'nchar' then 'char'
+            when 'ntext' then 'string'
+            when 'numeric' then 'decimal'
+            when 'nvarchar' then 'string'
+            when 'real' then 'double'
+            when 'smalldatetime' then 'DateTime'
+            when 'smallint' then 'short'
+            when 'smallmoney' then 'decimal'
+            when 'text' then 'string'
+            when 'time' then 'TimeSpan'
+            when 'timestamp' then 'DateTime'
+            when 'tinyint' then 'byte'
+            when 'uniqueidentifier' then 'Guid'
+            when 'varbinary' then 'byte[]'
+            when 'varchar' then 'string'
+            else 'UNKNOWN_' + typ.name
+        end ColumnType,
+        case 
+            when col.is_nullable = 1 and typ.name in ('bigint', 'bit', 'date', 'datetime', 'datetime2', 'datetimeoffset', 'decimal', 'float', 'int', 'money', 'numeric', 'real', 'smalldatetime', 'smallint', 'smallmoney', 'time', 'tinyint', 'uniqueidentifier') 
+            then '?' 
+            else '' 
+        end NullableSign
+    from sys.columns col
+        join sys.types typ on
+            col.system_type_id = typ.system_type_id AND col.user_type_id = typ.user_type_id
+    where object_id = object_id(@TableName)
+) t
+order by ColumnId
+
+set @Result = @Result  + '
+}'
+
+print @Result
+END
+
+
+|/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
