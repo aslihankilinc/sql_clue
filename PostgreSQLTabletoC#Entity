@@ -1,7 +1,7 @@
 DO $$
 DECLARE
-    v_table_schema text := 'public';
-    v_table_name text := 'merkez_bankasi_konut_metrekare';
+    v_table_schema text := 'schema_name';
+    v_table_name text := 'table_name';
     result text := '';
     col record;
     clr_type text;
